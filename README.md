@@ -1,4 +1,3 @@
-Claro! Aqui está um `README.md` completo e bem estruturado para seu projeto:
 
 ---
 
