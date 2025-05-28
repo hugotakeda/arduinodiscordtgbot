@@ -1,7 +1,3 @@
-Claro! Aqui está o `README.md` traduzido para o português, com linguagem profissional e estruturado conforme as boas práticas do GitHub:
-
----
-
 # Sistema de Monitoramento com ESP32-CAM
 
 Este projeto implementa um sistema de monitoramento utilizando o ESP32-CAM (módulo AI-Thinker) para detectar movimento, capturar fotos, transmitir vídeo ao vivo e enviar alertas para um servidor do Discord. O sistema conta com uma interface web para status em tempo real e registros, um sensor PIR para detecção de movimento, display OLED para status local e um botão físico para alternar o modo de streaming.
