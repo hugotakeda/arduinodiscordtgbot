@@ -1,176 +1,172 @@
+ESP32-CAM Monitoring System
+This project implements a monitoring system using the ESP32-CAM (AI-Thinker module) to detect motion, capture photos, stream video, and send alerts to a Discord server. The system features a web interface for real-time status updates and logs, a PIR sensor for motion detection, an OLED display for local status, and a button to toggle video streaming.
+Features
 
----
+Motion Detection: Uses a PIR sensor to detect motion and trigger photo capture.
+Photo Capture and Alerts: Captures photos and sends them to a Discord webhook when motion is detected.
+Video Streaming: Streams live video via a web interface.
+Web Interface: Displays system status, logs, and controls for starting/stopping the stream and capturing photos.
+OLED Display: Shows real-time status updates (e.g., Wi-Fi connection, motion detection).
+Button Control: Toggles video streaming on/off using a physical button.
+Static IP Configuration: Uses a fixed IP address for reliable access to the web interface.
 
-````markdown
-# 📷 ESP32 Discord Surveillance Bot
+Hardware Requirements
 
-Sistema de videomonitoramento com ESP32, que detecta movimento e envia alertas ao Discord com imagem em tempo real. Também permite transmitir vídeo ao vivo em uma chamada do Discord via OBS.
+ESP32-CAM (AI-Thinker module): Main microcontroller with OV2640 camera.
+PIR Sensor: Connected to GPIO 33 for motion detection.
+Push Button: Connected to GPIO 34 for toggling video streaming.
+SSD1306 OLED Display (128x64): Connected via I2C for status display.
+USB-TTL Adapter: For programming the ESP32-CAM (e.g., CP2102, CH340, FTDI).
+Jumper Wires: For connecting GPIO 0 to GND during upload.
+Power Supply: 5V or 3.3V (minimum 500mA) to power the ESP32-CAM.
 
----
+Software Requirements
 
-## 🧩 Componentes Utilizados
+Arduino IDE: Version 2.x or later recommended.
+ESP32 Board Support: Install via Arduino Boards Manager (URL: https://raw.githubusercontent.com/espressif/arduino-esp32/master/package_esp32_index.json).
+Libraries:
+esp_camera (for camera functionality)
+WiFi (for network connectivity)
+ESPAsyncWebServer (for asynchronous web server)
+AsyncTCP (dependency for ESPAsyncWebServer)
+Adafruit_GFX (for OLED display graphics)
+Adafruit_SSD1306 (for OLED display control)
+HTTPClient (for sending Discord webhooks)
+ArduinoJson (for JSON parsing)
 
-- 📦 **TTGO ESP32 WROVER** com câmera (OV2640)
-- 🟪 **Sensor de Movimento PIR**
-- 📺 **Display OLED SSD1306 (opcional)**
-- 👁️ **Lente olho de peixe (fish-eye)**
 
----
 
-## 🚀 Funcionalidades
+Install libraries via the Arduino IDE Library Manager.
+Pin Configuration
+The pin assignments are tailored for the AI-Thinker ESP32-CAM module:
 
-- ✅ Detecta movimento com sensor PIR
-- ✅ Captura imagem da câmera no momento do movimento
-- ✅ Envia alerta ao canal Discord marcando `@everyone`
-- ✅ Servidor MJPEG para transmissão em tempo real
-- ✅ Transmissão de vídeo para chamada de voz via bot + OBS
+Camera Pins:
+PWDN: GPIO 26
+XCLK: GPIO 32
+SIOD: GPIO 13
+SIOC: GPIO 12
+Y9-Y2: GPIO 39, 36, 23, 18, 15, 4, 14, 5
+VSYNC: GPIO 27
+HREF: GPIO 25
+PCLK: GPIO 19
 
----
 
-## 🌐 Estrutura do Projeto
+PIR Sensor: GPIO 33
+Push Button: GPIO 34 (with internal pull-up)
+OLED Display: I2C (SDA: GPIO 13, SCL: GPIO 12)
 
-```bash
-ESP32-Discord-Bot/
-│
-├── esp32/
-│   └── camera_stream.ino        # Código do ESP32 com servidor MJPEG
-│
-├── bot/
-│   ├── send_alert.js            # Bot que envia imagem e alerta ao Discord
-│   ├── call_bot.js              # Bot que entra na chamada de voz
-│   └── package.json             # Dependências Node.js
-│
-└── README.md
-````
+Setup Instructions
+1. Hardware Connections
 
----
+Connect the USB-TTL Adapter:
+GND (adapter) → GND (ESP32-CAM)
+5V or 3.3V (adapter) → 5V or 3.3V (ESP32-CAM, check your module's specs)
+TX (adapter) → U0R (GPIO 3)
+RX (adapter) → U0T (GPIO 1)
 
-## ⚙️ Como Funciona
 
-### 1. ESP32
+Connect the PIR Sensor:
+OUT → GPIO 33
+VCC → 5V or 3.3V (check sensor specs)
+GND → GND
 
-* Conecta-se ao Wi-Fi
-* Inicializa a câmera
-* Roda um servidor HTTP com:
 
-  * `/` → Página com stream ao vivo
-  * `/stream` → MJPEG
-* (Opcional) Endpoint `/capture` para capturar uma imagem JPEG
+Connect the Push Button:
+One pin → GPIO 34
+Other pin → GND
 
-### 2. Bot de Alerta (Node.js)
 
-* Monitora o ESP32
-* Quando o movimento é detectado, busca uma imagem via HTTP
-* Envia a imagem para o canal Discord com `@everyone`
+Connect the OLED Display:
+SDA → GPIO 13
+SCL → GPIO 12
+VCC → 3.3V
+GND → GND
 
-### 3. Transmissão via OBS + Bot
 
-* Crie uma **Fonte de Navegador** no OBS apontando para `http://<ESP32_IP>`
-* Ative a **Webcam Virtual**
-* O bot entra em uma chamada de voz e transmite essa "webcam virtual"
+GPIO 0 for Bootloader:
+During upload, connect GPIO 0 to GND using a jumper wire.
+Remove the jumper after uploading to run the code.
 
----
 
-## 🔧 Instalação
 
-### 📲 1. Flash do ESP32
+2. Software Setup
 
-* Instale as bibliotecas:
+Install the Arduino IDE and ESP32 board support.
+Install the required libraries listed above.
+Open the ESP32-CAM-Monitoring.ino file in the Arduino IDE.
+Update the Wi-Fi credentials in the code:const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
 
-  * `esp_camera.h`
-  * `WiFi.h`
-  * `WebServer.h`
-* Configure seu Wi-Fi no código
-* Faça upload via Arduino IDE ou PlatformIO
 
-### 💻 2. Bot Discord (Node.js)
+(Optional) Update the Discord webhook URL if needed:const char* discordWebhook = "YOUR_DISCORD_WEBHOOK_URL";
 
-1. Instale o Node.js
-2. Instale as dependências:
 
-```bash
-cd bot
-npm install
-```
 
-3. Crie um bot no Discord e obtenha o token
-4. Crie um comando `entrarchamada` se desejar usar o bot de voz
-5. Rode o bot:
+3. Uploading the Code
 
-```bash
-node send_alert.js      # para envio de alerta com imagem
-node call_bot.js        # para entrar em chamada de voz
-```
+Enter Bootloader Mode:
+Connect GPIO 0 to GND.
+Press the Reset button on the ESP32-CAM or reconnect power.
 
----
 
-## 🛠️ Configurações Relevantes
+Configure Arduino IDE:
+Board: Select AI Thinker ESP32-CAM (or ESP32 Wrover Module).
+Port: Choose the correct serial port (e.g., /dev/cu.usbserial-* on macOS or COM* on Windows).
+Upload Speed: Set to 115200.
+Partition Scheme: Use Default 4MB with spiffs or Huge APP (3MB No OTA/1MB SPIFFS).
 
-### `camera_stream.ino`
 
-```cpp
-const char* ssid = "SEU_WIFI";
-const char* password = "SENHA_WIFI";
-```
+Upload:
+Click Upload in the Arduino IDE.
+When "Connecting...." appears, ensure GPIO 0 is connected to GND and press Reset if needed.
+After upload, disconnect GPIO 0 from GND and press Reset to run the program.
 
-### `send_alert.js`
 
-```js
-const TOKEN = 'SEU_TOKEN_DISCORD_BOT';
-const CHANNEL_ID = 'ID_DO_CANAL';
-const CAMERA_URL = 'http://<ESP32_IP>/capture';
-```
 
----
+4. Testing
 
-## 🎥 Exemplo de Funcionamento
+Serial Monitor: Open at 115200 baud to view logs (e.g., "WiFi conectado", "Movimento detectado").
+Web Interface: Access http://192.168.4.1 in a browser to view the status, logs, and control streaming or photo capture.
+Discord Alerts: Verify that motion detection triggers photo uploads and messages to the configured Discord webhook.
+OLED Display: Check for status updates (e.g., "WiFi conectado", "Movimento detectado").
+Button: Press the button (GPIO 34) to toggle video streaming.
 
-* Alguém passa na frente do sensor PIR
+Troubleshooting
 
-* O ESP32 envia uma imagem
+Upload Error ("No serial data received"):
+Ensure GPIO 0 is connected to GND during upload.
+Check USB-TTL adapter drivers (CP2102, CH340, etc.).
+Use a high-quality USB cable and verify power supply (minimum 500mA).
+Try a lower upload speed (e.g., 115200) or a different USB port/computer.
 
-* O bot envia no Discord:
 
-  ```
-  @everyone Movimento detectado!
-  ```
+Camera Initialization Failure:
+Verify camera pin connections match the code.
+Ensure sufficient power supply.
 
-* Ao ativar o OBS + bot de chamada, o vídeo ao vivo é transmitido diretamente no Discord.
 
----
+Wi-Fi Connection Issues:
+Double-check SSID and password.
+Ensure the ESP32-CAM is within Wi-Fi range.
 
-## 📌 Notas Finais
 
-* O ESP32 não pode transmitir diretamente para chamadas do Discord por limitações de hardware e protocolos.
-* O uso do OBS com Webcam Virtual simula isso no desktop, ideal para visualização de vídeo ao vivo.
+Memory Issues:
+The sketch uses ~91% of program space. If unstable, move the HTML page to SPIFFS.
 
----
 
-## 📃 Licença
 
-MIT © 2025 - Projeto educacional de monitoramento com ESP32 e Discord
+Project Structure
+ESP32-CAM-Monitoring/
+├── ESP32-CAM-Monitoring.ino  # Main Arduino sketch
+├── README.md                 # This file
 
-```
-MIT License
+Contributing
+Feel free to submit issues or pull requests for improvements, such as optimizing memory usage, adding features, or enhancing the web interface.
+License
+This project is licensed under the MIT License. See the LICENSE file for details.
+Acknowledgments
 
-Copyright (c) 2025 [Seu Nome]
+ESP32-CAM documentation
+ESPAsyncWebServer library
+Adafruit SSD1306 library
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the “Software”), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-copies of the Software, and to permit persons to whom the Software is  
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in  
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN  
-THE SOFTWARE.
-
-```
