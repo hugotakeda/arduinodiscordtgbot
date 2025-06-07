@@ -1,232 +1,208 @@
-ESP32-CAM Fridge Monitor
-Overview
-The ESP32-CAM Fridge Monitor is a project that uses an ESP32-CAM module equipped with an OV2640 camera and a PIR (Passive Infrared) sensor to detect movement near a refrigerator. When motion is detected, the system wakes up, displays a warning on an SSD1306 OLED display, captures a photo, and sends it to a server via HTTP POST. After completing its tasks, the ESP32 enters deep sleep mode to conserve power.
-This project is designed for monitoring unauthorized access to a fridge, with a visual warning and photo capture functionality.
-Features
+# Monitor de Geladeira com ESP32-CAM  
 
-Motion Detection: Uses a PIR sensor to detect movement near the fridge.
-Visual Warning: Displays a countdown and warning messages on a 128x64 SSD1306 OLED display.
-Photo Capture: Captures images using the OV2640 camera module on the ESP32-CAM.
-HTTP POST: Sends captured images to a specified server URL.
-Deep Sleep: Enters low-power deep sleep mode after completing tasks to save energy.
-Wi-Fi Connectivity: Connects to a Wi-Fi network to upload images.
+## Visão Geral  
 
-Hardware Requirements
+O **Monitor de Geladeira com ESP32-CAM** é um projeto que utiliza um módulo ESP32-CAM equipado com uma câmera OV2640 e um sensor PIR (Infravermelho Passivo) para detectar movimento próximo a uma geladeira. Quando o movimento é detectado, o sistema acorda, exibe um aviso em um display OLED SSD1306, captura uma foto e a envia para um servidor via HTTP POST. Após concluir as tarefas, o ESP32 entra em modo *deep sleep* para economizar energia.  
 
-ESP32-CAM Module: A development board with an ESP32-S module and OV2640 camera.
-PIR Sensor: Connected to GPIO 33 for motion detection.
-SSD1306 OLED Display: 128x64 resolution, connected via I2C (SCL: GPIO 22, SDA: GPIO 21).
-Power Supply: USB or battery (ensure stable 3.3V or 5V supply).
-Wi-Fi Network: A local Wi-Fi network for internet connectivity.
+Este projeto foi desenvolvido para monitorar acessos não autorizados à geladeira, com aviso visual e funcionalidade de captura de fotos.  
 
-Software Requirements
+## Funcionalidades  
 
-Arduino IDE: For programming the ESP32-CAM.
-ESP32 Board Support: Add the ESP32 board package to the Arduino IDE.
-Libraries:
-WiFi.h: For Wi-Fi connectivity (included with ESP32 board package).
-esp_http_client.h: For HTTP POST requests (included with ESP32 board package).
-U8x8lib.h: For controlling the SSD1306 OLED display (install via Arduino Library Manager).
-OV2640.h: Custom library for the OV2640 camera (ensure it’s included in the src folder).
+- **Detecção de Movimento**: Utiliza um sensor PIR para detectar movimento próximo à geladeira.  
+- **Aviso Visual**: Exibe uma contagem regressiva e mensagens de alerta em um display OLED SSD1306 (128x64).  
+- **Captura de Foto**: Tira fotos usando o módulo de câmera OV2640 do ESP32-CAM.  
+- **Envio via HTTP POST**: Envia as imagens capturadas para uma URL de servidor especificada.  
+- **Modo Deep Sleep**: Entra em modo de baixo consumo após a execução das tarefas para economizar energia.  
+- **Conexão Wi-Fi**: Conecta-se a uma rede Wi-Fi para enviar as imagens.  
 
+## Requisitos de Hardware  
 
-Server: A web server running PHP (or another language) to receive images (see Server Setup).
+- **Módulo ESP32-CAM**: Placa de desenvolvimento com módulo ESP32-S e câmera OV2640.  
+- **Sensor PIR**: Conectado ao GPIO 33 para detecção de movimento.  
+- **Display OLED SSD1306**: Resolução 128x64, conectado via I2C (SCL: GPIO 22, SDA: GPIO 21).  
+- **Fonte de Alimentação**: USB ou bateria (garanta um fornecimento estável de 3.3V ou 5V).  
+- **Rede Wi-Fi**: Uma rede Wi-Fi local para conectividade com a internet.  
 
-Installation
+## Requisitos de Software  
 
-Set Up the Arduino IDE:
+- **Arduino IDE**: Para programar o ESP32-CAM.  
+- **Suporte à Placa ESP32**: Adicione o pacote da placa ESP32 à Arduino IDE.  
+- **Bibliotecas Necessárias**:  
+  - `WiFi.h`: Para conexão Wi-Fi (incluída no pacote da placa ESP32).  
+  - `esp_http_client.h`: Para requisições HTTP POST (incluída no pacote da placa ESP32).  
+  - `U8x8lib.h`: Para controle do display OLED SSD1306 (instale via Arduino Library Manager).  
+  - `OV2640.h`: Biblioteca personalizada para a câmera OV2640 (certifique-se de que está na pasta `src`).  
+- **Servidor**: Um servidor web rodando PHP (ou outra linguagem) para receber as imagens (veja a seção **Configuração do Servidor**).  
 
-Install the Arduino IDE from arduino.cc.
-Add ESP32 board support:
-Go to File > Preferences, add the following URL to "Additional Boards Manager URLs":https://raw.githubusercontent.com/espressif/arduino-esp32/master/package_esp32_index.json
+## Instalação  
 
+### Configurando a Arduino IDE  
 
-In Tools > Board > Boards Manager, search for "ESP32" and install the package.
+1. **Instale a Arduino IDE** a partir do site [arduino.cc](https://www.arduino.cc/).  
+2. **Adicione o suporte à placa ESP32**:  
+   - Vá em *Arquivo > Preferências* e adicione a seguinte URL em *"Additional Boards Manager URLs"*:  
+     ```
+     https://raw.githubusercontent.com/espressif/arduino-esp32/master/package_esp32_index.json  
+     ```  
+   - Em *Ferramentas > Placa > Gerenciador de Placas*, procure por "ESP32" e instale o pacote.  
+   - Selecione a placa: *Ferramentas > Placa > ESP32 Arduino > ESP32-CAM*.  
 
+### Instalando Bibliotecas  
 
-Select the board: Tools > Board > ESP32 Arduino > ESP32-CAM.
+1. **Instale a biblioteca U8x8lib**:  
+   - Vá em *Sketch > Incluir Biblioteca > Gerenciar Bibliotecas*, procure por "U8g2" e instale.  
+2. **Verifique se a biblioteca `OV2640.h` está na pasta `src` do seu projeto**.  
 
+### Configurando o Código  
 
-Install Libraries:
+1. Abra o sketch Arduino fornecido (`fridge_monitor.ino`) na Arduino IDE.  
+2. Atualize as seguintes variáveis no código:  
+   ```cpp
+   const char *ssid = "VIVOFIBRA-1FE1"; // Substitua pelo seu SSID Wi-Fi  
+   const char *password = "2NBJwUFuUX"; // Substitua pela sua senha Wi-Fi  
+   const char *post_url = "http://192.168.15.10:8888/esp32cam/posted.php"; // Substitua pela URL do seu servidor  
+   ```  
+3. Certifique-se de que `post_url` aponte para o seu servidor (veja **Configuração do Servidor**).  
 
-Install the U8x8lib library:
-Go to Sketch > Include Library > Manage Libraries, search for "U8g2", and install.
+### Upload do Código  
 
+1. Conecte o ESP32-CAM ao computador via adaptador USB-serial (ex: módulo FTDI).  
+2. Selecione a porta correta em *Ferramentas > Porta*.  
+3. Faça o upload do sketch para o ESP32-CAM.  
 
-Ensure the OV2640.h library is in the src folder of your project.
+## Configuração do Servidor  
 
+O ESP32-CAM envia imagens via HTTP POST para um servidor. Abaixo está um exemplo de configuração usando PHP em uma máquina local com MAMP (macOS).  
 
-Configure the Code:
+### Pré-requisitos  
 
-Open the provided Arduino sketch (fridge_monitor.ino) in the Arduino IDE.
-Update the following variables in the code:const char *ssid = "VIVOFIBRA-1FE1"; // Replace with your Wi-Fi SSID
-const char *password = "2NBJwUFuUX"; // Replace with your Wi-Fi password
-const char *post_url = "http://192.168.15.10:8888/esp32cam/posted.php"; // Replace with your server URL
+- **MAMP**: Baixe e instale a partir de [mamp.info](https://www.mamp.info/).  
+- **PHP**: Incluído no MAMP.  
+- **Diretório**: `/Applications/MAMP/htdocs`.  
 
+### Passos  
 
-Ensure the post_url points to your server (see Server Setup).
+1. **Inicie o MAMP**:  
+   - Abra o MAMP e inicie o servidor Apache (porta padrão: 8888).  
+   - Confirme que o servidor está rodando (luz verde no MAMP).  
 
+2. **Crie o Script PHP**:  
+   - Em `/Applications/MAMP/htdocs`, crie uma pasta chamada `esp32cam`.  
+   - Dentro dela, crie um arquivo chamado `posted.php` com o seguinte conteúdo:  
+     ```php
+     <?php
+     header('Content-Type: text/plain');
 
-Upload the Code:
+     $upload_dir = 'uploads/';
+     if (!is_dir($upload_dir)) {
+         mkdir($upload_dir, 0777, true);
+     }
 
-Connect the ESP32-CAM to your computer via a USB-to-serial adapter (e.g., FTDI module).
-Select the correct port in Tools > Port.
-Upload the sketch to the ESP32-CAM.
+     $filename = $upload_dir . 'image_' . time() . '.jpg';
+     $image_data = file_get_contents('php://input');
 
+     if ($image_data !== false && !empty($image_data)) {
+         if (file_put_contents($filename, $image_data)) {
+             echo "Imagem enviada com sucesso: $filename";
+         } else {
+             echo "Falha ao salvar a imagem.";
+         }
+     } else {
+         echo "Nenhum dado de imagem recebido.";
+     }
+     ?>
+     ```  
+   - Crie uma pasta chamada `uploads` em `/Applications/MAMP/htdocs/esp32cam`.  
+   - Defina as permissões:  
+     ```sh
+     chmod -R 777 /Applications/MAMP/htdocs/esp32cam/uploads
+     ```  
 
+3. **Teste o Servidor**:  
+   - Acesse `http://localhost:8888/esp32cam/posted.php` em um navegador. Você deve ver a mensagem *"Nenhum dado de imagem recebido."*.  
+   - Atualize a variável `post_url` no código Arduino para corresponder ao IP do seu servidor (ex: `http://192.168.15.10:8888/esp32cam/posted.php`).  
 
-Server Setup
-The ESP32-CAM sends images via HTTP POST to a server. Below is an example of setting up a server using PHP on a local machine with MAMP (macOS).
-Prerequisites
+### Implantação Online (Opcional)  
 
-MAMP: Download and install from mamp.info.
-PHP: Included with MAMP.
-Directory: /Applications/MAMP/htdocs.
+- Para acesso remoto, use um serviço de hospedagem ou configure *port forwarding* no seu roteador.  
+- Considere adicionar segurança (ex: HTTPS, chave de autenticação).  
 
-Steps
+## Como Usar  
 
-Start MAMP:
+1. **Alimente o ESP32-CAM**:  
+   - Conecte o ESP32-CAM a uma fonte de energia (USB ou bateria).  
+   - O dispositivo entrará em *deep sleep* e aguardará a detecção de movimento pelo sensor PIR.  
 
-Open MAMP and start the Apache server (default port: 8888).
-Confirm the Apache server is running (green light in MAMP).
+2. **Detecção de Movimento**:  
+   - Quando o sensor PIR (GPIO 33) detectar movimento, o ESP32 acordará.  
+   - O display OLED exibirá um aviso (*"AFASTE-SE DA GELADEIRA"*) seguido de uma contagem regressiva de 5 segundos.  
 
+3. **Captura e Envio da Foto**:  
+   - Se o movimento persistir por 3 segundos, a câmera capturará uma foto.  
+   - A foto será enviada ao servidor via HTTP POST.  
+   - O dispositivo retornará ao modo *deep sleep*.  
 
-Create the PHP Script:
+4. **Visualização das Imagens**:  
+   - Verifique a pasta `/Applications/MAMP/htdocs/esp32cam/uploads` para ver as imagens salvas.  
+   - Alternativamente, configure uma interface web para visualizar as imagens remotamente.  
 
-In /Applications/MAMP/htdocs, create a folder named esp32cam.
+## Solução de Problemas  
 
-Create a file named posted.php with the following content:
-<?php
-header('Content-Type: text/plain');
+### Falha na Conexão Wi-Fi  
 
-$upload_dir = 'uploads/';
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0777, true);
-}
+- Verifique o SSID e senha no código.  
+- Verifique o monitor serial (`Serial.begin(115200)`) para ver o status da conexão.  
+- Certifique-se de que o ESP32-CAM está dentro do alcance do Wi-Fi.  
 
-$filename = $upload_dir . 'image_' . time() . '.jpg';
-$image_data = file_get_contents('php://input');
+### Imagens Não Estão Sendo Salvas  
 
-if ($image_data !== false && !empty($image_data)) {
-    if (file_put_contents($filename, $image_data)) {
-        echo "Image uploaded successfully: $filename";
-    } else {
-        echo "Failed to save image.";
+- Confirme se o servidor está rodando e se a `post_url` está correta.  
+- Verifique os logs do MAMP:  
+  - `/Applications/MAMP/logs/php_error.log`  
+  - `/Applications/MAMP/logs/apache_error.log`  
+- Verifique as permissões da pasta `uploads` (`chmod -R 777`).  
+
+### Problemas com o Sensor PIR  
+
+- Certifique-se de que o sensor PIR está conectado ao GPIO 33 e configurado como entrada.  
+- Teste o sensor monitorando `digitalRead(PIR_PIN)` no monitor serial.  
+
+### Display OLED Não Funciona  
+
+- Verifique as conexões I2C (SCL: GPIO 22, SDA: GPIO 21).  
+- Confirme se a biblioteca `U8x8lib` foi instalada corretamente.  
+
+## Considerações de Segurança  
+
+- **Autenticação**: Adicione uma chave secreta ao script PHP e ao código do ESP32 para evitar acesso não autorizado:  
+  - **PHP**:  
+    ```php
+    $secret_key = "sua_chave_secreta";
+    if ($_SERVER['HTTP_X_SECRET_KEY'] !== $secret_key) {
+        echo "Chave inválida.";
+        exit;
     }
-} else {
-    echo "No image data received.";
-}
-?>
+    ```  
+  - **ESP32**:  
+    ```cpp
+    esp_http_client_set_header(http_client, "X-Secret-Key", "sua_chave_secreta");
+    ```  
+- **HTTPS**: Use um servidor seguro com SSL para implantações online.  
+- **Firewall**: Certifique-se de que a porta do servidor (ex: 8888) esteja aberta, mas protegida.  
 
+## Melhorias Futuras  
 
-Create a folder named uploads in /Applications/MAMP/htdocs/esp32cam.
+- Adicionar uma interface web para visualizar as imagens capturadas.  
+- Integrar notificações (ex: e-mail ou Telegram) quando movimento for detectado.  
+- Armazenar imagens em nuvem (ex: AWS S3, Google Cloud Storage).  
+- Implementar transmissão em tempo real em vez de fotos únicas.  
 
-Set permissions:
-chmod -R 777 /Applications/MAMP/htdocs/esp32cam/uploads
+## Licença  
 
+Este projeto está licenciado sob a **MIT License**. Consulte o arquivo `LICENSE` para mais detalhes.  
 
+## Agradecimentos  
 
-
-Test the Server:
-
-Access http://localhost:8888/esp32cam/posted.php in a browser. You should see "No image data received."
-Update the post_url in the Arduino code to match your server’s IP (e.g., http://192.168.15.10:8888/esp32cam/posted.php).
-
-
-Online Deployment (Optional):
-
-For remote access, use a hosting service or set up port forwarding on your router.
-Consider adding security (e.g., HTTPS, authentication key).
-
-
-
-Usage
-
-Power the ESP32-CAM:
-
-Connect the ESP32-CAM to a power source (USB or battery).
-The device enters deep sleep and waits for the PIR sensor to detect motion.
-
-
-Motion Detection:
-
-When the PIR sensor (GPIO 33) detects motion, the ESP32 wakes up.
-The OLED display shows a warning ("STEP AWAY FROM THE FRIDGE") followed by a 5-second countdown.
-
-
-Photo Capture and Upload:
-
-If motion is still detected after 3 seconds, the camera captures a photo.
-The photo is sent to the server via HTTP POST.
-The device then returns to deep sleep.
-
-
-View Images:
-
-Check the /Applications/MAMP/htdocs/esp32cam/uploads folder for saved images.
-Alternatively, set up a web interface to view images remotely.
-
-
-
-Troubleshooting
-
-Wi-Fi Connection Fails:
-
-Verify the SSID and password in the code.
-Check the serial monitor (Serial.begin(115200)) for connection status.
-Ensure the ESP32-CAM is within Wi-Fi range.
-
-
-Images Not Saving:
-
-Confirm the server is running and the post_url is correct.
-Check MAMP logs: /Applications/MAMP/logs/php_error.log or /Applications/MAMP/logs/apache_error.log.
-Verify permissions on the uploads folder (chmod -R 777).
-
-
-PIR Sensor Issues:
-
-Ensure the PIR sensor is connected to GPIO 33 and configured as an input.
-Test the sensor by monitoring digitalRead(PIR_PIN) in the serial monitor.
-
-
-OLED Display Not Working:
-
-Check I2C connections (SCL: GPIO 22, SDA: GPIO 21).
-Ensure the U8x8lib library is installed correctly.
-
-
-
-Security Considerations
-
-Authentication: Add a secret key to the PHP script and ESP32 code to prevent unauthorized access:
-PHP:$secret_key = "your_secret_key";
-if ($_SERVER['HTTP_X_SECRET_KEY'] !== $secret_key) {
-    echo "Invalid key.";
-    exit;
-}
-
-
-ESP32:esp_http_client_set_header(http_client, "X-Secret-Key", "your_secret_key");
-
-
-
-
-HTTPS: Use a secure server with SSL for online deployments.
-Firewall: Ensure the server’s port (e.g., 8888) is open but protected.
-
-Future Improvements
-
-Add a web interface to view captured images.
-Integrate notifications (e.g., email or Telegram) when motion is detected.
-Store images in cloud storage (e.g., AWS S3, Google Cloud Storage).
-Implement real-time streaming instead of single photos.
-
-License
-This project is licensed under the MIT License. See the LICENSE file for details.
-Acknowledgments
-
-ESP32 Arduino Core for ESP32 support.
-U8g2 Library for OLED display control.
-MAMP for local server setup on macOS.
-
+- **ESP32 Arduino Core** pelo suporte ao ESP32.  
+- **Biblioteca U8g2** pelo controle do display OLED.  
+- **MAMP** pela configuração local do servidor em macOS.
